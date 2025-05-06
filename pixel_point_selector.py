@@ -28,10 +28,8 @@ def point(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         if limit_points and len(a) >= max_points:
             return
-        x_img = int((x - window_width // 2 - offset_x) /
-                    scale + img.shape[1] // 2)
-        y_img = int((y - window_height // 2 - offset_y) /
-                    scale + img.shape[0] // 2)
+        x_img = int((x - window_width // 2 - offset_x) / scale + img.shape[1] // 2)
+        y_img = int((y - window_height // 2 - offset_y) / scale + img.shape[0] // 2)
         a.append(x_img)
         b.append(y_img)
         print(f"Selected point: ({x_img}, {y_img})")
@@ -101,39 +99,71 @@ def redraw_image():
     dest_y_end = min(window_height, y_start + img_scaled.shape[0])
 
     if src_x_start < src_x_end and src_y_start < src_y_end:
-        img_display[dest_y_start:dest_y_end, dest_x_start:dest_x_end] = \
-            img_scaled[src_y_start:src_y_end, src_x_start:src_x_end]
+        img_display[dest_y_start:dest_y_end, dest_x_start:dest_x_end] = img_scaled[
+            src_y_start:src_y_end, src_x_start:src_x_end
+        ]
 
     for i in range(len(a)):
-        x_display = int((a[i] - (img.shape[1] // 2)) *
-                        scale + window_width // 2 + offset_x)
-        y_display = int((b[i] - (img.shape[0] // 2)) *
-                        scale + window_height // 2 + offset_y)
-        if 0 <= x_display < img_display.shape[1] and 0 <= y_display < img_display.shape[0]:
+        x_display = int(
+            (a[i] - (img.shape[1] // 2)) * scale + window_width // 2 + offset_x
+        )
+        y_display = int(
+            (b[i] - (img.shape[0] // 2)) * scale + window_height // 2 + offset_y
+        )
+        if (
+            0 <= x_display < img_display.shape[1]
+            and 0 <= y_display < img_display.shape[0]
+        ):
             xy = f"{a[i]},{b[i]}"
-            cv2.circle(img_display, (x_display, y_display),
-                       5, (0, 0, 255), thickness=-1)
-            cv2.putText(img_display, xy, (x_display, y_display),
-                        cv2.FONT_HERSHEY_PLAIN, 2.0, (255, 0, 0), thickness=2)
+            cv2.circle(
+                img_display, (x_display, y_display), 5, (0, 0, 255), thickness=-1
+            )
+            cv2.putText(
+                img_display,
+                xy,
+                (x_display, y_display),
+                cv2.FONT_HERSHEY_PLAIN,
+                2.0,
+                (255, 0, 0),
+                thickness=2,
+            )
 
     if limit_points and len(a) == 3:
         # Calculate and draw the incenter
         center_x, center_y = calculate_incenter(a, b)
         center_x_display = int(
-            (center_x - (img.shape[1] // 2)) * scale + window_width // 2 + offset_x)
+            (center_x - (img.shape[1] // 2)) * scale + window_width // 2 + offset_x
+        )
         center_y_display = int(
-            (center_y - (img.shape[0] // 2)) * scale + window_height // 2 + offset_y)
-        if 0 <= center_x_display < img_display.shape[1] and 0 <= center_y_display < img_display.shape[0]:
-            cv2.circle(img_display, (center_x_display,
-                       center_y_display), 5, (0, 255, 0), thickness=-1)
-            cv2.putText(img_display, f"Incenter: ({int(center_x)},{int(center_y)})", (center_x_display, center_y_display),
-                        cv2.FONT_HERSHEY_PLAIN, 2.0, (255, 0, 0), thickness=2)
+            (center_y - (img.shape[0] // 2)) * scale + window_height // 2 + offset_y
+        )
+        if (
+            0 <= center_x_display < img_display.shape[1]
+            and 0 <= center_y_display < img_display.shape[0]
+        ):
+            cv2.circle(
+                img_display,
+                (center_x_display, center_y_display),
+                5,
+                (0, 255, 0),
+                thickness=-1,
+            )
+            cv2.putText(
+                img_display,
+                f"Incenter: ({int(center_x)},{int(center_y)})",
+                (center_x_display, center_y_display),
+                cv2.FONT_HERSHEY_PLAIN,
+                2.0,
+                (255, 0, 0),
+                thickness=2,
+            )
 
     cv2.imshow(win_name, img_display)
 
 
 def calculate_incenter(x, y):
     """Calculate the incenter of the triangle."""
+
     def distance(p1, p2):
         return np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
@@ -152,16 +182,18 @@ def calculate_incenter(x, y):
 
 def save_coordinates_and_center():
     global img_path, output_dir
-    df = pd.DataFrame({
-        'Type': ['Point'] * len(a) + ['Incenter'],
-        'X': [a[i] for i in range(len(a))] + [calculate_incenter(a, b)[0]],
-        'Y': [b[i] for i in range(len(b))] + [calculate_incenter(a, b)[1]]
-    })
+    df = pd.DataFrame(
+        {
+            "Type": ["Point"] * len(a) + ["Incenter"],
+            "X": [a[i] for i in range(len(a))] + [calculate_incenter(a, b)[0]],
+            "Y": [b[i] for i in range(len(b))] + [calculate_incenter(a, b)[1]],
+        }
+    )
 
     os.makedirs(output_dir, exist_ok=True)
 
     image_name = os.path.splitext(os.path.basename(img_path))[0]
-    csv_path = os.path.join(output_dir, f'{image_name}.csv')
+    csv_path = os.path.join(output_dir, f"{image_name}.csv")
 
     df.to_csv(csv_path, index=False)
 
@@ -184,8 +216,10 @@ def main():
     # limit_points = False  # Set to True to limit points to 3, False for no limit
 
     # Set input and output paths
-    img_path = r'C:\Users\10137\Desktop\4DRadar_Moncular_Calibration\dataset\image\frame_59.jpg'
-    output_dir = r'C:\Users\10137\Desktop\4DRadar_Moncular_Calibration\dataset\image\csv'
+    img_path = r"C:\Users\10137\Desktop\3DRadar_Moncular_Calibration\dataset\image\frame_59.jpg"
+    output_dir = (
+        r"C:\Users\10137\Desktop\3DRadar_Moncular_Calibration\dataset\image\csv"
+    )
 
     # Load image
     img = cv2.imread(img_path)
